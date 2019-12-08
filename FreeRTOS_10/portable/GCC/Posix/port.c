@@ -149,6 +149,7 @@ xParams *pxThisThreadParams = pvPortMalloc( sizeof( xParams ) );
 	if ( (pthread_t)NULL == hMainThread )
 	{
 		hMainThread = pthread_self();
+		printf("hMainThread:%d\n", hMainThread);
 	}
 
 	/* No need to join the threads. */
@@ -464,6 +465,7 @@ portBASE_TYPE xResult;
 			/* This is a suicidal thread, need to select a different task to run. */
 			vTaskSwitchContext();
 			xTaskToResume = prvGetThreadHandle( xTaskGetCurrentTaskHandle() );
+			printf("%d-%d\n", xTaskToDelete, xTaskToResume);
 		}
 
 		if ( pthread_self() != xTaskToDelete )
@@ -501,7 +503,7 @@ pdTASK_CODE pvCode = pxParams->pxCode;
 void * pParams = pxParams->pvParams;
 	vPortFree( pvParams );
 
-	pthread_cleanup_push( prvDeleteThread, (void *)pthread_self() );
+	// pthread_cleanup_push( prvDeleteThread, (void *)pthread_self() );
 
 	if ( 0 == pthread_mutex_lock( &xSingleThreadMutex ) )
 	{
@@ -509,7 +511,11 @@ void * pParams = pxParams->pvParams;
 		prvSuspendThread( pthread_self() );
 	}
 	pvCode( pParams );
-	pthread_cleanup_pop( 1 );
+	printf("ending of thread:%d\n", pthread_self());
+	// pthread_cleanup_pop( 1 );
+
+	vTaskDelete(xTaskGetCurrentTaskHandle());
+	prvDeleteThread(pthread_self());
 	return (void *)NULL;
 }
 /*-----------------------------------------------------------*/
