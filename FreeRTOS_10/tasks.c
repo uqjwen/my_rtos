@@ -684,19 +684,6 @@ static void prvInitialiseNewTask( 	TaskFunction_t pxTaskCode,
 StackType_t *pxTopOfStack;
 UBaseType_t x;
 
-	#if( portUSING_MPU_WRAPPERS == 1 )
-		/* Should the task be created in privileged mode? */
-		BaseType_t xRunPrivileged;
-		if( ( uxPriority & portPRIVILEGE_BIT ) != 0U )
-		{
-			xRunPrivileged = pdTRUE;
-		}
-		else
-		{
-			xRunPrivileged = pdFALSE;
-		}
-		uxPriority &= ~portPRIVILEGE_BIT;
-	#endif /* portUSING_MPU_WRAPPERS == 1 */
 
 	/* Avoid dependency on memset() if it is not required. */
 	#if( tskSET_NEW_STACKS_TO_KNOWN_VALUE == 1 )
@@ -800,11 +787,6 @@ UBaseType_t x;
 	listSET_LIST_ITEM_VALUE( &( pxNewTCB->xEventListItem ), ( TickType_t ) configMAX_PRIORITIES - ( TickType_t ) uxPriority ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
 	listSET_LIST_ITEM_OWNER( &( pxNewTCB->xEventListItem ), pxNewTCB );
 
-	#if ( portCRITICAL_NESTING_IN_TCB == 1 )
-	{
-		pxNewTCB->uxCriticalNesting = ( UBaseType_t ) 0U;
-	}
-	#endif /* portCRITICAL_NESTING_IN_TCB */
 
 	#if ( configUSE_APPLICATION_TASK_TAG == 1 )
 	{
@@ -818,25 +800,8 @@ UBaseType_t x;
 	}
 	#endif /* configGENERATE_RUN_TIME_STATS */
 
-	#if ( portUSING_MPU_WRAPPERS == 1 )
-	{
-		vPortStoreTaskMPUSettings( &( pxNewTCB->xMPUSettings ), xRegions, pxNewTCB->pxStack, ulStackDepth );
-	}
-	#else
-	{
-		/* Avoid compiler warning about unreferenced parameter. */
-		( void ) xRegions;
-	}
-	#endif
+		// ( void ) xRegions;
 
-	#if( configNUM_THREAD_LOCAL_STORAGE_POINTERS != 0 )
-	{
-		for( x = 0; x < ( UBaseType_t ) configNUM_THREAD_LOCAL_STORAGE_POINTERS; x++ )
-		{
-			pxNewTCB->pvThreadLocalStoragePointers[ x ] = NULL;
-		}
-	}
-	#endif
 
 	#if ( configUSE_TASK_NOTIFICATIONS == 1 )
 	{
@@ -845,70 +810,8 @@ UBaseType_t x;
 	}
 	#endif
 
-	#if ( configUSE_NEWLIB_REENTRANT == 1 )
-	{
-		/* Initialise this task's Newlib reent structure. */
-		_REENT_INIT_PTR( ( &( pxNewTCB->xNewLib_reent ) ) );
-	}
-	#endif
+	pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxTaskCode, pvParameters );
 
-	#if( INCLUDE_xTaskAbortDelay == 1 )
-	{
-		pxNewTCB->ucDelayAborted = pdFALSE;
-	}
-	#endif
-
-	/* Initialize the TCB stack to look as if the task was already running,
-	but had been interrupted by the scheduler.  The return address is set
-	to the start of the task function. Once the stack has been initialised
-	the top of stack variable is updated. */
-	#if( portUSING_MPU_WRAPPERS == 1 )
-	{
-		/* If the port has capability to detect stack overflow,
-		pass the stack end address to the stack initialization
-		function as well. */
-		#if( portHAS_STACK_OVERFLOW_CHECKING == 1 )
-		{
-			#if( portSTACK_GROWTH < 0 )
-			{
-				pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxNewTCB->pxStack, pxTaskCode, pvParameters, xRunPrivileged );
-			}
-			#else /* portSTACK_GROWTH */
-			{
-				pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxNewTCB->pxEndOfStack, pxTaskCode, pvParameters, xRunPrivileged );
-			}
-			#endif /* portSTACK_GROWTH */
-		}
-		#else /* portHAS_STACK_OVERFLOW_CHECKING */
-		{
-			pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxTaskCode, pvParameters, xRunPrivileged );
-		}
-		#endif /* portHAS_STACK_OVERFLOW_CHECKING */
-	}
-	#else /* portUSING_MPU_WRAPPERS */
-	{
-		/* If the port has capability to detect stack overflow,
-		pass the stack end address to the stack initialization
-		function as well. */
-		#if( portHAS_STACK_OVERFLOW_CHECKING == 1 )
-		{
-			#if( portSTACK_GROWTH < 0 )
-			{
-				pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxNewTCB->pxStack, pxTaskCode, pvParameters );
-			}
-			#else /* portSTACK_GROWTH */
-			{
-				pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxNewTCB->pxEndOfStack, pxTaskCode, pvParameters );
-			}
-			#endif /* portSTACK_GROWTH */
-		}
-		#else /* portHAS_STACK_OVERFLOW_CHECKING */
-		{
-			pxNewTCB->pxTopOfStack = pxPortInitialiseStack( pxTopOfStack, pxTaskCode, pvParameters );
-		}
-		#endif /* portHAS_STACK_OVERFLOW_CHECKING */
-	}
-	#endif /* portUSING_MPU_WRAPPERS */
 
 	if( pxCreatedTask != NULL )
 	{
@@ -2800,6 +2703,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 
 void vTaskSwitchContext( void )
 {
+	// printf("context switch here\n");
 	if( uxSchedulerSuspended != ( UBaseType_t ) pdFALSE )
 	{
 		/* The scheduler is currently suspended - do not allow a context

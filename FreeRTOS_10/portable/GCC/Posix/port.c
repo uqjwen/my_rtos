@@ -505,11 +505,10 @@ void * pParams = pxParams->pvParams;
 
 	if ( 0 == pthread_mutex_lock( &xSingleThreadMutex ) )
 	{
+	printf("wait for start:%d\n", pthread_self());
 		prvSuspendThread( pthread_self() );
 	}
-
 	pvCode( pParams );
-
 	pthread_cleanup_pop( 1 );
 	return (void *)NULL;
 }
@@ -518,7 +517,6 @@ void * pParams = pxParams->pvParams;
 void prvSuspendSignalHandler(int sig)
 {
 sigset_t xSignals;
-
 	/* Only interested in the resume signal. */
 	sigemptyset( &xSignals );
 	sigaddset( &xSignals, SIG_RESUME );
@@ -535,6 +533,7 @@ sigset_t xSignals;
 	{
 		printf( "SSH: Sw %d\n", sig );
 	}
+	// printf("suspend handler\n");
 
 	/* Will resume here when the SIG_RESUME signal is received. */
 	/* Need to set the interrupts based on the task's critical nesting. */
@@ -557,6 +556,8 @@ portBASE_TYPE xResult = pthread_mutex_lock( &xSuspendResumeThreadMutex );
 		/* Set-up for the Suspend Signal handler? */
 		xSentinel = 0;
 		xResult = pthread_mutex_unlock( &xSuspendResumeThreadMutex );
+		printf("thread:%d\n", SIG_SUSPEND);
+
 		xResult = pthread_kill( xThreadId, SIG_SUSPEND );
 		while ( ( xSentinel == 0 ) && ( pdTRUE != xServicingTick ) )
 		{
