@@ -265,11 +265,11 @@ typedef struct tskTaskControlBlock 			/* The old naming convention is used to pr
 
 	#if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
 		StackType_t		*pxEndOfStack;		/*< Points to the highest valid address for the stack. */
-	#endif
+	#endif// noif 
 
 	#if ( portCRITICAL_NESTING_IN_TCB == 1 )
 		UBaseType_t		uxCriticalNesting;	/*< Holds the critical section nesting depth for ports that do not maintain their own count in the port layer. */
-	#endif
+	#endif // noif 
 
 	#if ( configUSE_TRACE_FACILITY == 1 )
 		UBaseType_t		uxTCBNumber;		/*< Stores a number that increments each time a TCB is created.  It allows debuggers to determine when a task has been deleted and then recreated. */
@@ -287,13 +287,13 @@ typedef struct tskTaskControlBlock 			/* The old naming convention is used to pr
 
 	#if( configNUM_THREAD_LOCAL_STORAGE_POINTERS > 0 )
 		void			*pvThreadLocalStoragePointers[ configNUM_THREAD_LOCAL_STORAGE_POINTERS ];
-	#endif
+	#endif //noif
 
 	#if( configGENERATE_RUN_TIME_STATS == 1 )
 		uint32_t		ulRunTimeCounter;	/*< Stores the amount of time the task has spent in the Running state. */
 	#endif
 
-	#if ( configUSE_NEWLIB_REENTRANT == 1 )
+	#if ( configUSE_NEWLIB_REENTRANT == 1 ) //noif 
 		/* Allocate a Newlib reent structure that is specific to this task.
 		Note Newlib support has been included by popular demand, but is not
 		used by the FreeRTOS maintainers themselves.  FreeRTOS is not
@@ -315,11 +315,11 @@ typedef struct tskTaskControlBlock 			/* The old naming convention is used to pr
 		uint8_t	ucStaticallyAllocated; 		/*< Set to pdTRUE if the task is a statically allocated to ensure no attempt is made to free the memory. */
 	#endif
 
-	#if( INCLUDE_xTaskAbortDelay == 1 )
+	#if( INCLUDE_xTaskAbortDelay == 1 )//noif
 		uint8_t ucDelayAborted;
 	#endif
 
-	#if( configUSE_POSIX_ERRNO == 1 )
+	#if( configUSE_POSIX_ERRNO == 1 )//noif 
 		int iTaskErrno;
 	#endif
 
@@ -594,7 +594,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB ) PRIVILEGED_FUNCTION;
 		/* If the stack grows down then allocate the stack then the TCB so the stack
 		does not grow into the TCB.  Likewise if the stack grows up then allocate
 		the TCB then the stack. */
-		#if( portSTACK_GROWTH > 0 )
+		#if( portSTACK_GROWTH > 0 )//portSTACK_GROWTH = -1
 		{
 			/* Allocate space for the TCB.  Where the memory comes from depends on
 			the implementation of the port malloc function and whether or not static
@@ -4688,22 +4688,22 @@ TickType_t uxReturn;
 
 		configASSERT( xTaskToNotify );
 
-		/* RTOS ports that support interrupt nesting have the concept of a
-		maximum	system call (or maximum API call) interrupt priority.
-		Interrupts that are	above the maximum system call priority are keep
-		permanently enabled, even when the RTOS kernel is in a critical section,
-		but cannot make any calls to FreeRTOS API functions.  If configASSERT()
-		is defined in FreeRTOSConfig.h then
-		portASSERT_IF_INTERRUPT_PRIORITY_INVALID() will result in an assertion
-		failure if a FreeRTOS API function is called from an interrupt that has
-		been assigned a priority above the configured maximum system call
-		priority.  Only FreeRTOS functions that end in FromISR can be called
-		from interrupts	that have been assigned a priority at or (logically)
-		below the maximum system call interrupt priority.  FreeRTOS maintains a
-		separate interrupt safe API to ensure interrupt entry is as fast and as
-		simple as possible.  More information (albeit Cortex-M specific) is
-		provided on the following link:
-		http://www.freertos.org/RTOS-Cortex-M3-M4.html */
+		//  RTOS ports that support interrupt nesting have the concept of a
+		// maximum	system call (or maximum API call) interrupt priority.
+		// Interrupts that are	above the maximum system call priority are keep
+		// permanently enabled, even when the RTOS kernel is in a critical section,
+		// but cannot make any calls to FreeRTOS API functions.  If configASSERT()
+		// is defined in FreeRTOSConfig.h then
+		// portASSERT_IF_INTERRUPT_PRIORITY_INVALID() will result in an assertion
+		// failure if a FreeRTOS API function is called from an interrupt that has
+		// been assigned a priority above the configured maximum system call
+		// priority.  Only FreeRTOS functions that end in FromISR can be called
+		// from interrupts	that have been assigned a priority at or (logically)
+		// below the maximum system call interrupt priority.  FreeRTOS maintains a
+		// separate interrupt safe API to ensure interrupt entry is as fast and as
+		// simple as possible.  More information (albeit Cortex-M specific) is
+		// provided on the following link:
+		// http://www.freertos.org/RTOS-Cortex-M3-M4.html 
 		portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
 		pxTCB = xTaskToNotify;
@@ -4739,31 +4739,31 @@ TickType_t uxReturn;
 					}
 					else
 					{
-						/* The value could not be written to the task. */
+						 // The value could not be written to the task. 
 						xReturn = pdFAIL;
 					}
 					break;
 
 				case eNoAction :
-					/* The task is being notified without its notify value being
-					updated. */
+					//  The task is being notified without its notify value being
+					// updated. 
 					break;
 
 				default:
-					/* Should not get here if all enums are handled.
-					Artificially force an assert by testing a value the
-					compiler can't assume is const. */
+					//  Should not get here if all enums are handled.
+					// Artificially force an assert by testing a value the
+					// compiler can't assume is const. 
 					configASSERT( pxTCB->ulNotifiedValue == ~0UL );
 					break;
 			}
 
 			traceTASK_NOTIFY_FROM_ISR();
 
-			/* If the task is in the blocked state specifically to wait for a
-			notification then unblock it now. */
+			//  If the task is in the blocked state specifically to wait for a
+			// notification then unblock it now. 
 			if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
 			{
-				/* The task should not have been on an event list. */
+				 // The task should not have been on an event list. 
 				configASSERT( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL );
 
 				if( uxSchedulerSuspended == ( UBaseType_t ) pdFALSE )
@@ -4773,23 +4773,23 @@ TickType_t uxReturn;
 				}
 				else
 				{
-					/* The delayed and ready lists cannot be accessed, so hold
-					this task pending until the scheduler is resumed. */
+					//  The delayed and ready lists cannot be accessed, so hold
+					// this task pending until the scheduler is resumed. 
 					vListInsertEnd( &( xPendingReadyList ), &( pxTCB->xEventListItem ) );
 				}
 
 				if( pxTCB->uxPriority > pxCurrentTCB->uxPriority )
 				{
-					/* The notified task has a priority above the currently
-					executing task so a yield is required. */
+					//  The notified task has a priority above the currently
+					// executing task so a yield is required. 
 					if( pxHigherPriorityTaskWoken != NULL )
 					{
 						*pxHigherPriorityTaskWoken = pdTRUE;
 					}
 
-					/* Mark that a yield is pending in case the user is not
-					using the "xHigherPriorityTaskWoken" parameter to an ISR
-					safe FreeRTOS function. */
+					//  Mark that a yield is pending in case the user is not
+					// using the "xHigherPriorityTaskWoken" parameter to an ISR
+					// safe FreeRTOS function. 
 					xYieldPending = pdTRUE;
 				}
 				else
@@ -4816,22 +4816,22 @@ TickType_t uxReturn;
 
 		configASSERT( xTaskToNotify );
 
-		/* RTOS ports that support interrupt nesting have the concept of a
-		maximum	system call (or maximum API call) interrupt priority.
-		Interrupts that are	above the maximum system call priority are keep
-		permanently enabled, even when the RTOS kernel is in a critical section,
-		but cannot make any calls to FreeRTOS API functions.  If configASSERT()
-		is defined in FreeRTOSConfig.h then
-		portASSERT_IF_INTERRUPT_PRIORITY_INVALID() will result in an assertion
-		failure if a FreeRTOS API function is called from an interrupt that has
-		been assigned a priority above the configured maximum system call
-		priority.  Only FreeRTOS functions that end in FromISR can be called
-		from interrupts	that have been assigned a priority at or (logically)
-		below the maximum system call interrupt priority.  FreeRTOS maintains a
-		separate interrupt safe API to ensure interrupt entry is as fast and as
-		simple as possible.  More information (albeit Cortex-M specific) is
-		provided on the following link:
-		http://www.freertos.org/RTOS-Cortex-M3-M4.html */
+		//  RTOS ports that support interrupt nesting have the concept of a
+		// maximum	system call (or maximum API call) interrupt priority.
+		// Interrupts that are	above the maximum system call priority are keep
+		// permanently enabled, even when the RTOS kernel is in a critical section,
+		// but cannot make any calls to FreeRTOS API functions.  If configASSERT()
+		// is defined in FreeRTOSConfig.h then
+		// portASSERT_IF_INTERRUPT_PRIORITY_INVALID() will result in an assertion
+		// failure if a FreeRTOS API function is called from an interrupt that has
+		// been assigned a priority above the configured maximum system call
+		// priority.  Only FreeRTOS functions that end in FromISR can be called
+		// from interrupts	that have been assigned a priority at or (logically)
+		// below the maximum system call interrupt priority.  FreeRTOS maintains a
+		// separate interrupt safe API to ensure interrupt entry is as fast and as
+		// simple as possible.  More information (albeit Cortex-M specific) is
+		// provided on the following link:
+		// http://www.freertos.org/RTOS-Cortex-M3-M4.html 
 		portASSERT_IF_INTERRUPT_PRIORITY_INVALID();
 
 		pxTCB = xTaskToNotify;
@@ -4841,17 +4841,17 @@ TickType_t uxReturn;
 			ucOriginalNotifyState = pxTCB->ucNotifyState;
 			pxTCB->ucNotifyState = taskNOTIFICATION_RECEIVED;
 
-			/* 'Giving' is equivalent to incrementing a count in a counting
-			semaphore. */
+			//  'Giving' is equivalent to incrementing a count in a counting
+			// semaphore. 
 			( pxTCB->ulNotifiedValue )++;
 
 			traceTASK_NOTIFY_GIVE_FROM_ISR();
 
-			/* If the task is in the blocked state specifically to wait for a
-			notification then unblock it now. */
+			//  If the task is in the blocked state specifically to wait for a
+			// notification then unblock it now. 
 			if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
 			{
-				/* The task should not have been on an event list. */
+				 // The task should not have been on an event list. 
 				configASSERT( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) == NULL );
 
 				if( uxSchedulerSuspended == ( UBaseType_t ) pdFALSE )
@@ -4861,23 +4861,23 @@ TickType_t uxReturn;
 				}
 				else
 				{
-					/* The delayed and ready lists cannot be accessed, so hold
-					this task pending until the scheduler is resumed. */
+					//  The delayed and ready lists cannot be accessed, so hold
+					// this task pending until the scheduler is resumed. 
 					vListInsertEnd( &( xPendingReadyList ), &( pxTCB->xEventListItem ) );
 				}
 
 				if( pxTCB->uxPriority > pxCurrentTCB->uxPriority )
 				{
-					/* The notified task has a priority above the currently
-					executing task so a yield is required. */
+					//  The notified task has a priority above the currently
+					// executing task so a yield is required. 
 					if( pxHigherPriorityTaskWoken != NULL )
 					{
 						*pxHigherPriorityTaskWoken = pdTRUE;
 					}
 
-					/* Mark that a yield is pending in case the user is not
-					using the "xHigherPriorityTaskWoken" parameter in an ISR
-					safe FreeRTOS function. */
+					//  Mark that a yield is pending in case the user is not
+					// using the "xHigherPriorityTaskWoken" parameter in an ISR
+					// safe FreeRTOS function. 
 					xYieldPending = pdTRUE;
 				}
 				else
@@ -4900,8 +4900,8 @@ TickType_t uxReturn;
 	TCB_t *pxTCB;
 	BaseType_t xReturn;
 
-		/* If null is passed in here then it is the calling task that is having
-		its notification state cleared. */
+		//  If null is passed in here then it is the calling task that is having
+		// its notification state cleared. 
 		pxTCB = prvGetTCBFromHandle( xTask );
 
 		taskENTER_CRITICAL();

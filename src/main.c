@@ -20,6 +20,7 @@ int main(void)
 {
     // createCliTask();
     // createCmdParserTask();
+    // printf('INCLUDE_vTaskDelete = %d\n', INCLUDE_vTaskDelete);
 	xTaskCreate(task, "task1", 32, "task1", 3, NULL);
 	xTaskCreate(task, "task2", 32, "task2", 5, NULL);
     vTaskStartScheduler();
